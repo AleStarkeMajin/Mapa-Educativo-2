@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - id: string (required)
+    //   - emailOrPhone: string (required)
+    //   - name: string (required)
+    //   - role: string (required, 'owner' | 'student')
+    //   - nodes: array (optional)
+    //   - baseVersion: number (optional)
+    //
+    // Collection: main_map
+    // Document ID: nodes
+    // Fields:
+    //   - nodes: array of MindMapNode
+    //
+    // Collection: published_map
+    // Document ID: nodes
+    // Fields:
+    //   - nodes: array of MindMapNode
+    //
+    // Collection: pull_requests
+    // Document ID: {prId}
+    // Fields:
+    //   - id: string (required)
+    //   - userId: string (required)
+    //   - userName: string (required)
+    //   - nodes: array (required)
+    //   - timestamp: number (required)
+    //   - status: string (required, 'pending' | 'accepted' | 'rejected')
+    //
+    // Collection: metadata
+    // Document ID: config
+    // Fields:
+    //   - mainVersion: number
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner' ||
+         (request.auth.token.email == "alejandro.starke@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidUser(data) {
+      return data.id is string &&
+             data.emailOrPhone is string &&
+             data.name is string &&
+             data.role in ['owner', 'student'];
+    }
+
+    function isValidPR(data) {
+      return data.id is string &&
+             data.userId is string &&
+             data.userName is string &&
+             data.nodes is list &&
+             data.timestamp is number &&
+             data.status in ['pending', 'accepted', 'rejected'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (request.auth.uid == userId || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /main_map/nodes {
+      allow read, write: if isAdmin();
+    }
+
+    match /published_map/nodes {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /pull_requests/{prId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && isValidPR(request.resource.data) && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /metadata/config {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

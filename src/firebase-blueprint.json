@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and personal mind map branch",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "emailOrPhone": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "student"] },
+        "nodes": { "type": "array", "items": { "$ref": "MindMapNode" } },
+        "baseVersion": { "type": "number" }
+      },
+      "required": ["id", "emailOrPhone", "name", "role"]
+    },
+    "MindMapNode": {
+      "title": "MindMapNode",
+      "description": "A node in the mind map",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "parentId": { "type": "string" },
+        "label": { "type": "string" },
+        "description": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["parent", "child"] },
+        "status": {
+          "type": "string",
+          "enum": ["todo", "in-progress", "completed"]
+        },
+        "prerequisites": { "type": "array", "items": { "type": "string" } },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "lastUpdated": { "type": "number" }
+      },
+      "required": ["id", "label", "type", "status"]
+    },
+    "PullRequest": {
+      "title": "PullRequest",
+      "description": "A proposal to update the main map",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "nodes": { "type": "array", "items": { "$ref": "MindMapNode" } },
+        "timestamp": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "rejected"]
+        }
+      },
+      "required": ["id", "userId", "userName", "nodes", "timestamp", "status"]
+    },
+    "GlobalMetadata": {
+      "title": "GlobalMetadata",
+      "description": "Global application state",
+      "type": "object",
+      "properties": {
+        "mainVersion": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and their personal map branches"
+    },
+    "/main_map/nodes": {
+      "schema": { "type": "array", "items": { "$ref": "MindMapNode" } },
+      "description": "The main draft of the mind map (Owner only)"
+    },
+    "/published_map/nodes": {
+      "schema": { "type": "array", "items": { "$ref": "MindMapNode" } },
+      "description": "The published version of the mind map (Publicly readable)"
+    },
+    "/pull_requests/{prId}": {
+      "schema": "PullRequest",
+      "description": "Pending proposals from students"
+    },
+    "/metadata/config": {
+      "schema": "GlobalMetadata",
+      "description": "Global configuration and versioning"
+    }
+  }
+}
