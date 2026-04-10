@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Auth Iframe</title>
+  </head>
+  <body>
+    <!-- Minimal iframe page to satisfy Firebase's iframe endpoint -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script>
+      // no-op: keep iframe available for Firebase auth internals
+      // optionally could mirror firebaseConfig if needed
+      console.log("Auth iframe loaded");
+    </script>
+    <div style="font-family: Inter, system-ui, Arial; padding: 16px">
+      Auth iframe
+    </div>
+  </body>
+</html>
