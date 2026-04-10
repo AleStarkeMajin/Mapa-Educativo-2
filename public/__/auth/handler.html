@@ -38,18 +38,28 @@
         }
       }
 
-      // Procesa el resultado de redirect/popup y notifica a la ventana origin
-      auth.getRedirectResult()
-        .then((result) => {
-          notifyOpener({ type: 'firebase-auth', resultPresent: !!result?.user });
-        })
-        .catch((err) => {
-          notifyOpener({ type: 'firebase-auth', error: err && err.code ? err.code : String(err) });
-        })
-        .finally(() => {
-          // intenta cerrar el popup
-          try { window.close(); } catch (e) { /* ignore */ }
-        });
+      // Espera a que el estado de autenticación cambie (útil para flujos popup)
+      // No cerramos la ventana inmediatamente; la cerramos solo cuando el usuario
+      // ha terminado el flujo de autenticación.
+      const authTimeout = setTimeout(() => {
+        notifyOpener({ type: 'firebase-auth', error: 'timeout' });
+      }, 120000); // 2 minutos
+
+      const unsubscribe = auth.onAuthStateChanged((user) => {
+        if (user) {
+          notifyOpener({
+            type: 'firebase-auth',
+            user: { uid: user.uid, email: user.email, displayName: user.displayName },
+          });
+          clearTimeout(authTimeout);
+          try {
+            window.close();
+          } catch (e) {
+            // ignore
+          }
+          unsubscribe();
+        }
+      });
     </script>
   </body>
 </html>
