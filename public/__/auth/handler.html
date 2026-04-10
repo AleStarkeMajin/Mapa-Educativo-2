@@ -85,6 +85,45 @@
             }
           }
           unsubscribe();
+          const resultPre = document.createElement("pre");
+          resultPre.style.whiteSpace = "pre-wrap";
+          resultPre.style.fontSize = "13px";
+          resultPre.style.marginTop = "12px";
+          const resultObj = {
+            status: "success",
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+          };
+          resultPre.innerText = JSON.stringify(resultObj, null, 2);
+          document.body.appendChild(resultPre);
+          // save for later inspection
+          try {
+            localStorage.setItem(
+              "firebase-auth-last",
+              JSON.stringify(resultObj),
+            );
+          } catch (e) {}
+          statusEl.innerText = `Autenticado: ${user.email || user.uid}`;
+          // show auto-close countdown and manual close
+          let countdown = 10;
+          const countdownEl = document.createElement("div");
+          countdownEl.style.marginTop = "8px";
+          countdownEl.innerText = `Esta ventana se cerrará automáticamente en ${countdown} s`;
+          document.body.appendChild(countdownEl);
+          const closeInterval = setInterval(() => {
+            countdown -= 1;
+            countdownEl.innerText = `Esta ventana se cerrará automáticamente en ${countdown} s`;
+            if (countdown <= 0) {
+              clearInterval(closeInterval);
+              // Solo cerramos si fue abierta por la ventana padre
+              if (window.opener && !window.opener.closed) {
+                try {
+                  window.close();
+                } catch (e) {}
+              }
+            }
+          }, 1000);
         }
       });
     </script>
