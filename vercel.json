@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/__/auth/handler", "destination": "/__/auth/handler.html" }
+  ]
+}
